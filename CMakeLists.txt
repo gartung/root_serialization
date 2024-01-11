@@ -16,7 +16,6 @@ endif()
 project(threaded_io_test VERSION 0.1 LANGUAGES CXX)
 
 list(PREPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules)
-
 # want debug symbols
 
 # specify the C++ standard
@@ -26,9 +25,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g3")
 
 find_package(ROOT REQUIRED COMPONENTS Core RIO Tree)
-find_package(TBB REQUIRED)
-find_package(zstd REQUIRED)
 find_package(lz4 REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_search_module(ZSTD REQUIRED IMPORTED_TARGET GLOBAL libzstd)
+find_package(TBB REQUIRED)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
@@ -104,7 +104,9 @@ target_link_libraries(threaded_io_test
                               configKeys
                               sequence_classes_dict
                               batchevents_classes_dict
-                              zstd::libzstd_shared)
+			      PkgConfig::ZSTD
+			      stdc++
+			      )
 
 add_subdirectory(mpi)
 add_subdirectory(cms)
@@ -123,7 +125,9 @@ target_link_libraries(unroll_test
                               TBB::tbb
                               cms_dict
                               sequence_classes_dict
-                              test_classes_dict)
+                              test_classes_dict
+			      stdc++
+			      )
 
 enable_testing()
 add_subdirectory(tests)
@@ -177,13 +181,13 @@ if(ENABLE_HDF5)
     HDFBatchEventsOutputer.cc
     HDFOutputer.cc
     HDFSource.cc)
-  target_include_directories(threaded_io_test PRIVATE "${PROJECT_BINARY_DIR}" ${HDF5_DIR}/include)
+  target_include_directories(threaded_io_test PRIVATE "${PROJECT_BINARY_DIR}" ${HDF5_DIR}/include ${MPI_DIR}/include)
   target_link_directories(threaded_io_test PRIVATE ${HDF5_DIR}/lib)
   if(ENABLE_MPI)
     target_include_directories(threaded_io_test PRIVATE "${PROJECT_BINARY_DIR}" ${MPI_DIR}/include)
     target_link_directories(threaded_io_test PRIVATE ${MPI_DIR}/lib)
   endif()
-  target_link_libraries(threaded_io_test PRIVATE hdf5 hdf5_hl)
+  target_link_libraries(threaded_io_test PRIVATE hdf5 hdf5_hl stdc++)
   add_test(NAME HDFOutputerEmptyTest COMMAND threaded_io_test -s EmptySource -t 1 -n 10 -o HDFOutputer=test_empty.h5)
   add_test(NAME TestProductsHDF COMMAND bash -c "${CMAKE_CURRENT_BINARY_DIR}/threaded_io_test -s TestProductsSource -t 1 -n 10 -o HDFOutputer=test_prod.h5; ${CMAKE_CURRENT_BINARY_DIR}/threaded_io_test -s HDFSource=test_prod.h5 -t 1 -n 10 -o TestProductsOutputer")
   add_test(NAME HDFEventOutputerEmptyTest COMMAND threaded_io_test -s EmptySource -t 1 -n 10 -o HDFEventOutputer=test_empty_event.h5)

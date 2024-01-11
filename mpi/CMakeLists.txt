@@ -49,6 +49,11 @@ target_link_libraries(mpi_threaded_io_test
                               Threads::Threads
                               configKeys
                               sequence_classes_dict
-                              zstd::libzstd_shared
-                              hdf5
-                              ${MPI_DIR}/lib/libmpi.so)
+			      PkgConfig::ZSTD
+			      stdc++
+			      hdf5_hl_parallel
+			      hdf5_parallel
+			      mpich
+			      )
+		      set_target_properties(mpi_threaded_io_test  PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
+
